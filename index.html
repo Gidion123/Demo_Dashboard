@@ -1,0 +1,118 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NYC Property Sales Examples</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="heading">
+      <div class="container heading-content">
+        <div>
+          <h1>NYC Property Sales</h1>
+          <p>
+            Properties that sold in New York City over a 12-month period from
+            Sept 2016 to Aug 2017
+          </p>
+        </div>
+        <div>
+          <select id="borough-filter" name="borough">
+            <option value="-1">All Borough</option>
+          </select>
+          <input
+            type="date"
+            name="startDate"
+            id="startDate"
+            min="2016-09-01"
+            max="2017-08-31"
+          />
+          <input
+            type="date"
+            name="endDate"
+            id="endDate"
+            min="2016-09-01"
+            max="2017-08-31"
+          />
+        </div>
+      </div>
+    </header>
+    <main class="container">
+      <section class="hero card">
+        <div class="overview">
+          <dl>
+            <dt>Total Sales</dt>
+            <dd id="totalSales"></dd>
+          </dl>
+          <dl>
+            <dt>Total Units</dt>
+            <dd id="totalUnits"></dd>
+          </dl>
+          <dl>
+            <dt>Average Sales</dt>
+            <dd id="averageSales"></dd>
+          </dl>
+          <dl>
+            <dt>Commercial Units</dt>
+            <dd></dd>
+          </dl>
+        </div>
+        <div class="sales-chart">
+          <h2>Total Monthly Sales</h2>
+          <canvas id="totalMontlySales"></canvas>
+        </div>
+      </section>
+      <div id="map"></div>
+      <section class="reports">
+        <div class="card">
+          <h2>Property Type Sales</h2>
+          <canvas id="propertyTypeSales"></canvas>
+        </div>
+        <div class="card">
+          <h2>Most Orders by Year Built</h2>
+          <div class="chart"></div>
+        </div>
+        <div class="card">
+          <h2>Top Building Class Category Sales</h2>
+          <div class="chart" id="topCategoriesList"></div>
+        </div>
+        <div class="card">
+          <h2>Top Neighborhood Category Sales</h2>
+          <div class="chart"></div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <address>
+        <a href="https://x.com/gluekol"> @gluekol</a>
+        <span>-</span>
+        <a href="https://aang.dev" target="_blank" rel="noopener noreferrer"
+          >aang.dev
+        </a>
+      </address>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="dashboard-team-12.js" type="module"></script>
+    <!-- <script src="contoh.js" type="module"></script> -->
+    <!-- <script src="script2.js"></script> -->
+    <!-- <script src="map.js"></script>
+      <script src="groupSalePrice.js"></script> -->
+  </body>
+</html>
