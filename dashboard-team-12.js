@@ -42,6 +42,8 @@ const formatter = new Intl.NumberFormat("en-US", {
 
 let totalMonthlySaleChart = null;
 let topCategoriesChart = null;
+let bottomCategoriesChart = null;
+let HighestCategoriesChart = null;
 let selectedBoroughFilter = -1;
 let selectedStartDate = "2016-09-01";
 let selectedEndDate = "2017-08-31";
@@ -267,12 +269,43 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
     return topCategoriesList;
   }
 
+  function getBottomCategories() {
+    const categorySales = {};
+    mappedData.forEach((item) => {
+      const category = item["BUILDING CLASS CATEGORY"];
+      const salePrice = parseFloat(item["SALE PRICE"]);
+      if (!isNaN(salePrice)) {
+        if (category in categorySales) {
+          categorySales[category] += salePrice;
+        } else {
+          categorySales[category] = salePrice;
+        }
+      }
+    });
+
+    const sortedCategories = Object.keys(categorySales).sort(
+      (a, b) => categorySales[a] - categorySales[b]
+    );
+
+    const bottomCategories = sortedCategories.slice(0, 5);
+
+    const bottomCategoriesList = bottomCategories.map((category) => {
+      return {
+        category: category,
+        totalSales: categorySales[category],
+      };
+    });
+
+    return bottomCategoriesList;
+  }
+
   return {
     getTotalMonthlySales,
     getTotalSales,
     getTotalUnits,
     getAverageSales,
     getTopCategories,
+    getBottomCategories,
   };
 }
 
@@ -357,6 +390,103 @@ function renderTopCategoriesHorizontalBarChart(topCategories) {
     },
   });
 }
+function renderBottomCategoriesHorizontalBarChart(bottomCategories) {
+  const labels = bottomCategories.map((item) => item.category);
+  const data = bottomCategories.map((item) => item.totalSales);
+
+  const ctx = document
+    .getElementById("bottomCategoriesHorizontalBarChart")
+    .getContext("2d");
+
+  return new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Total Sales",
+          data: data,
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.2)",
+            "rgba(255, 159, 64, 0.2)",
+            "rgba(255, 205, 86, 0.2)",
+            "rgba(75, 192, 192, 0.2)",
+            "rgba(54, 162, 235, 0.2)",
+          ],
+          borderColor: [
+            "rgb(255, 99, 132)",
+            "rgb(255, 159, 64)",
+            "rgb(255, 205, 86)",
+            "rgb(75, 192, 192)",
+            "rgb(54, 162, 235)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "$" + value.toLocaleString();
+            },
+          },
+        },
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: "Bottom 5 Categories by Sales",
+        },
+      },
+    },
+  });
+}
+function renderTopCategoriesPieChart(topCategories) {
+  const labels = topCategories.map((item) => item.category);
+  const data = topCategories.map((item) => item.totalSales);
+
+  const ctx = document.getElementById("topCategoriesPieChart").getContext("2d");
+
+  return new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Total Sales",
+          data: data,
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.2)",
+            "rgba(54, 162, 235, 0.2)",
+            "rgba(255, 205, 86, 0.2)",
+            "rgba(75, 192, 192, 0.2)",
+            "rgba(153, 102, 255, 0.2)",
+          ],
+          borderColor: [
+            "rgb(255, 99, 132)",
+            "rgb(54, 162, 235)",
+            "rgb(255, 205, 86)",
+            "rgb(75, 192, 192)",
+            "rgb(153, 102, 255)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: "Top 5 Categories by Sales (Pie Chart)",
+        },
+      },
+    },
+  });
+}
 
 function renderTotalUnits(units) {
   const totalUnits = document.getElementById("totalUnits");
@@ -387,6 +517,12 @@ function render(filter) {
   if (topCategoriesChart !== null) {
     topCategoriesChart.destroy();
   }
+  if (bottomCategoriesChart !== null) {
+    bottomCategoriesChart.destroy();
+  }
+  if (HighestCategoriesChart !== null) {
+    HighestCategoriesChart.destroy();
+  }
 
   renderTotalSales(filter.getTotalSales());
   renderTotalUnits(filter.getTotalUnits());
@@ -397,4 +533,10 @@ function render(filter) {
 
   const topCategories = filter.getTopCategories();
   topCategoriesChart = renderTopCategoriesHorizontalBarChart(topCategories);
+
+  const bottomCategories = filter.getBottomCategories();
+  bottomCategoriesChart =
+    renderBottomCategoriesHorizontalBarChart(bottomCategories);
+
+  const topCategoriesPieChart = renderTopCategoriesPieChart(topCategories);
 }

@@ -63,36 +63,32 @@
             <dt>Average Sales</dt>
             <dd id="averageSales"></dd>
           </dl>
-          <dl>
-            <dt>Commercial Units</dt>
-            <dd></dd>
-          </dl>
         </div>
         <div class="sales-chart">
           <h2>Total Monthly Sales</h2>
           <canvas id="totalMontlySales"></canvas>
         </div>
       </section>
-      <div id="map"></div>
+      <div class="sales-chart">
+        <h2>NYC Borough Map</h2>
+        <canvas id="map"></canvas>
+      </div>
       <section class="reports">
         <div class="card">
-          <h2>Property Type Sales</h2>
-          <canvas id="propertyTypeSales"></canvas>
-        </div>
-        <div class="card">
-          <h2>Most Orders by Year Built</h2>
-          <div class="chart"></div>
-        </div>
-        <div class="card">
-          <h2>Top Building Class Category Sales</h2>
+          <h2>Top 5 Penjualan Tertinggi Category Property</h2>
           <canvas id="topCategoriesHorizontalBarChart"></canvas>
         </div>
-
         <div class="card">
-          <h2>Top Neighborhood Category Sales</h2>
-          <div class="chart"></div>
+          <h2>Top 5 Penjualan Terendah Category Property</h2>
+          <canvas id="bottomCategoriesHorizontalBarChart"></canvas>
         </div>
       </section>
+      <div class="sales-chart">
+        <h2>Top 5 Category Property by sale price</h2>
+        <div class="topCategoriesPieChart">
+          <canvas id="topCategoriesPieChart"></canvas>
+        </div>
+      </div>
     </main>
     <footer>
       <address>
