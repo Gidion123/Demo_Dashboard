@@ -41,6 +41,7 @@ const formatter = new Intl.NumberFormat("en-US", {
 });
 
 let totalMonthlySaleChart = null;
+let topCategoriesChart = null;
 let selectedBoroughFilter = -1;
 let selectedStartDate = "2016-09-01";
 let selectedEndDate = "2017-08-31";
@@ -65,7 +66,7 @@ filterBorough.addEventListener("change", (e) => {
   //   Render ulang chart sesuai filter
   const filter = createFilter(
     data,
-    e.target.value,
+    Number(e.target.value),
     selectedStartDate,
     selectedEndDate
   );
@@ -177,7 +178,7 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
       (item) => selectedBorough === -1 || item.BOROUGH == selectedBorough
     );
 
-  console.log(mappedData);
+  console.log(mappedData, selectedBorough);
 
   function getTotalMonthlySales() {
     const datasets = Object.keys(BOROUGH).map((key) => {
@@ -236,9 +237,9 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
     return average;
   }
 
-  function getTopCategories(filteredData) {
+  function getTopCategories() {
     const categorySales = {};
-    filteredData.forEach((item) => {
+    mappedData.forEach((item) => {
       const category = item["BUILDING CLASS CATEGORY"];
       const salePrice = parseFloat(item["SALE PRICE"]);
       if (!isNaN(salePrice)) {
@@ -308,7 +309,8 @@ function renderTopCategoriesHorizontalBarChart(topCategories) {
   const ctx = document
     .getElementById("topCategoriesHorizontalBarChart")
     .getContext("2d");
-  new Chart(ctx, {
+
+  return new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
@@ -382,6 +384,10 @@ function render(filter) {
     totalMonthlySaleChart.destroy();
   }
 
+  if (topCategoriesChart !== null) {
+    topCategoriesChart.destroy();
+  }
+
   renderTotalSales(filter.getTotalSales());
   renderTotalUnits(filter.getTotalUnits());
   renderAverageSales(filter.getAverageSales());
@@ -389,6 +395,6 @@ function render(filter) {
   const { datasets, labels } = filter.getTotalMonthlySales();
   totalMonthlySaleChart = renderCharts(labels, datasets);
 
-  const topCategories = filter.getTopCategories(data);
-  renderTopCategoriesHorizontalBarChart(topCategories);
+  const topCategories = filter.getTopCategories();
+  topCategoriesChart = renderTopCategoriesHorizontalBarChart(topCategories);
 }
