@@ -237,7 +237,6 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
   }
 
   function getTopCategories(filteredData) {
-    // Mengelompokkan data berdasarkan kategori dan menghitung total penjualan
     const categorySales = {};
     filteredData.forEach((item) => {
       const category = item["BUILDING CLASS CATEGORY"];
@@ -251,19 +250,16 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
       }
     });
 
-    // Mengurutkan kategori berdasarkan total penjualan
     const sortedCategories = Object.keys(categorySales).sort(
       (a, b) => categorySales[b] - categorySales[a]
     );
 
-    // Mengambil lima kategori teratas
     const topCategories = sortedCategories.slice(0, 5);
 
-    // Membuat list top 5 kategori beserta total penjualan mereka
     const topCategoriesList = topCategories.map((category) => {
       return {
         category: category,
-        totalSales: formatter.format(categorySales[category]),
+        totalSales: categorySales[category], // Pastikan nilai numerik untuk data
       };
     });
 
@@ -305,6 +301,60 @@ function renderCharts(labels, datasets) {
     },
   });
 }
+function renderTopCategoriesHorizontalBarChart(topCategories) {
+  const labels = topCategories.map((item) => item.category);
+  const data = topCategories.map((item) => item.totalSales);
+
+  const ctx = document
+    .getElementById("topCategoriesHorizontalBarChart")
+    .getContext("2d");
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Total Sales",
+          data: data,
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.2)",
+            "rgba(255, 159, 64, 0.2)",
+            "rgba(255, 205, 86, 0.2)",
+            "rgba(75, 192, 192, 0.2)",
+            "rgba(54, 162, 235, 0.2)",
+          ],
+          borderColor: [
+            "rgb(255, 99, 132)",
+            "rgb(255, 159, 64)",
+            "rgb(255, 205, 86)",
+            "rgb(75, 192, 192)",
+            "rgb(54, 162, 235)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y", // Mengatur sumbu menjadi horizontal
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "$" + value.toLocaleString();
+            },
+          },
+        },
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: "Top 5 Categories by Sales",
+        },
+      },
+    },
+  });
+}
 
 function renderTotalUnits(units) {
   const totalUnits = document.getElementById("totalUnits");
@@ -340,5 +390,5 @@ function render(filter) {
   totalMonthlySaleChart = renderCharts(labels, datasets);
 
   const topCategories = filter.getTopCategories(data);
-  renderTopCategories(topCategories);
+  renderTopCategoriesHorizontalBarChart(topCategories);
 }
