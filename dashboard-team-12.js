@@ -60,6 +60,7 @@ render(filter);
 const filterBorough = document.getElementById("borough-filter");
 filterBorough.addEventListener("change", (e) => {
   selectedBoroughFilter = Number(e.target.value);
+  console.log(selectedBoroughFilter);
 
   //   Render ulang chart sesuai filter
   const filter = createFilter(
