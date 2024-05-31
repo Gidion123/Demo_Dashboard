@@ -44,6 +44,7 @@ let totalMonthlySaleChart = null;
 let topCategoriesChart = null;
 let bottomCategoriesChart = null;
 let HighestCategoriesChart = null;
+let totalUnitCategoriesChart = null;
 let selectedBoroughFilter = -1;
 let selectedStartDate = "2016-09-01";
 let selectedEndDate = "2017-08-31";
@@ -298,6 +299,35 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
 
     return bottomCategoriesList;
   }
+  function getTopCategoriesByUnits() {
+    const categoryUnits = {};
+    mappedData.forEach((item) => {
+      const category = item["BUILDING CLASS CATEGORY"];
+      const totalUnits = parseFloat(item["TOTAL UNITS"]);
+      if (!isNaN(totalUnits)) {
+        if (category in categoryUnits) {
+          categoryUnits[category] += totalUnits;
+        } else {
+          categoryUnits[category] = totalUnits;
+        }
+      }
+    });
+
+    const sortedCategories = Object.keys(categoryUnits).sort(
+      (a, b) => categoryUnits[b] - categoryUnits[a]
+    );
+
+    const topCategories = sortedCategories.slice(0, 5);
+
+    const topCategoriesList = topCategories.map((category) => {
+      return {
+        category: category,
+        totalUnits: categoryUnits[category],
+      };
+    });
+
+    return topCategoriesList;
+  }
 
   return {
     getTotalMonthlySales,
@@ -306,6 +336,7 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
     getAverageSales,
     getTopCategories,
     getBottomCategories,
+    getTopCategoriesByUnits,
   };
 }
 
@@ -445,35 +476,30 @@ function renderBottomCategoriesHorizontalBarChart(bottomCategories) {
     },
   });
 }
-function renderTopCategoriesPieChart(topCategories) {
+function renderTopCategoriesDoughnutChartByUnits(topCategories) {
   const labels = topCategories.map((item) => item.category);
-  const data = topCategories.map((item) => item.totalSales);
+  const data = topCategories.map((item) => item.totalUnits);
 
-  const ctx = document.getElementById("topCategoriesPieChart").getContext("2d");
+  const ctx = document
+    .getElementById("topCategoriesDoughnutChart")
+    .getContext("2d");
 
   return new Chart(ctx, {
-    type: "pie",
+    type: "doughnut",
     data: {
       labels: labels,
       datasets: [
         {
-          label: "Total Sales",
+          label: "Total Units",
           data: data,
           backgroundColor: [
-            "rgba(255, 99, 132, 0.2)",
-            "rgba(54, 162, 235, 0.2)",
-            "rgba(255, 205, 86, 0.2)",
-            "rgba(75, 192, 192, 0.2)",
-            "rgba(153, 102, 255, 0.2)",
-          ],
-          borderColor: [
             "rgb(255, 99, 132)",
             "rgb(54, 162, 235)",
             "rgb(255, 205, 86)",
             "rgb(75, 192, 192)",
             "rgb(153, 102, 255)",
           ],
-          borderWidth: 1,
+          hoverOffset: 4,
         },
       ],
     },
@@ -481,7 +507,7 @@ function renderTopCategoriesPieChart(topCategories) {
       plugins: {
         title: {
           display: true,
-          text: "Top 5 Categories by Sales (Pie Chart)",
+          text: "Top 5 Categories by Total Units (Doughnut Chart)",
         },
       },
     },
@@ -523,6 +549,9 @@ function render(filter) {
   if (HighestCategoriesChart !== null) {
     HighestCategoriesChart.destroy();
   }
+  if (totalUnitCategoriesChart !== null) {
+    totalUnitCategoriesChart.destroy();
+  }
 
   renderTotalSales(filter.getTotalSales());
   renderTotalUnits(filter.getTotalUnits());
@@ -538,5 +567,7 @@ function render(filter) {
   bottomCategoriesChart =
     renderBottomCategoriesHorizontalBarChart(bottomCategories);
 
-  const topCategoriesPieChart = renderTopCategoriesPieChart(topCategories);
+  const topCategoriesByUnits = filter.getTopCategoriesByUnits();
+  totalUnitCategoriesChart =
+    renderTopCategoriesDoughnutChartByUnits(topCategoriesByUnits);
 }
