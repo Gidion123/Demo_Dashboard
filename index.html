@@ -71,7 +71,7 @@
       </section>
       <div class="sales-chart">
         <h2>NYC Borough Map</h2>
-        <canvas id="map"></canvas>
+        <div id="map"></div>
       </div>
       <section class="reports">
         <div class="card">
@@ -84,10 +84,14 @@
         </div>
       </section>
       <div class="sales-chart">
-        <h2>Top 5 Category Property by sale price</h2>
+        <h2>Top 5 Categories by Total Units</h2>
         <div class="topCategoriesPieChart">
           <canvas id="topCategoriesDoughnutChart"></canvas>
         </div>
+      </div>
+      <div class="sales-chart">
+        <h2>Tabel</h2>
+        <canvas id="map"></canvas>
       </div>
     </main>
     <footer>
@@ -106,10 +110,8 @@
       crossorigin=""
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-    <script src="dashboard-team-12.js" type="module"></script>
-    <!-- <script src="contoh.js" type="module"></script> -->
-    <!-- <script src="script2.js"></script> -->
-    <!-- <script src="map.js"></script>
-      <script src="groupSalePrice.js"></script> -->
+    <script src="MapNyc.js"></script>
+    <script src="script.js" type="module"></script>
+    <script src="groupSalePrice.js"></script>
   </body>
 </html>

@@ -1,17 +1,24 @@
-async function fetchData() {
-  const data = await fetch(
-    "https://raw.githubusercontent.com/rdsarjito/nyc_dataset/main/nyc_dataset.json"
-  ).then((res) => res.json());
-  return data;
-}
+// Step 0: Import data
+import data from "./json/DatasetNycPropertySales.json" assert { type: "json" };
 
-function sum(data, key) {
-  return data.reduce((acc, curr) => acc + curr[key], 0);
-}
+console.log({ data });
 
-function range(start, end) {
-  return Array.from({ length: end - start }, (_, i) => start + 1 + i);
-}
+const BOROUGH = {
+  MANHATTAN: 1,
+  BRONX: 2,
+  BROOKLYN: 3,
+  QUEENS: 4,
+  STATEN_ISLAND: 5,
+};
+
+const BOROUGH_DISPLAY_NAME = {
+  [BOROUGH.MANHATTAN]: "Manhattan",
+  [BOROUGH.BRONX]: "Bronx",
+  [BOROUGH.BROOKLYN]: "Brooklyn",
+  [BOROUGH.QUEENS]: "Queens",
+  [BOROUGH.STATEN_ISLAND]: "Staten Island",
+};
+
 const monthNames = [
   "Jan",
   "Feb",
@@ -27,120 +34,326 @@ const monthNames = [
   "Dec",
 ];
 
-function normalizeData(data, startDate, endDate) {
-  return data.reduce((acc, curr) => {
-    const [date, month, year] = curr["SALE DATE"]
-      .split("/")
-      .map((val) => Number(val));
-    const convertedDate = new Date(year, month - 1, date);
+const formatter = new Intl.NumberFormat("en-US", {
+  currency: "USD",
+  style: "currency",
+  maximumFractionDigits: 0,
+});
 
-    const newItem = {
-      ...curr,
-      date: convertedDate,
-      dateValue: { date, month: month - 1, year },
-    };
+let totalMonthlySaleChart = null;
+let topCategoriesChart = null;
+let bottomCategoriesChart = null;
+let HighestCategoriesChart = null;
+let totalUnitCategoriesChart = null;
+let selectedBoroughFilter = -1;
+let selectedStartDate = "2016-09-01";
+let selectedEndDate = "2017-08-31";
 
-    if (newItem.date >= startDate && newItem.date <= endDate) {
-      if (!acc[curr.BOROUGH]) {
-        acc[curr.BOROUGH] = [newItem];
-      } else {
-        acc[curr.BOROUGH].push(newItem);
-      }
+// Render chart di awal
+const filter = createFilter(
+  data,
+  selectedBoroughFilter,
+  selectedStartDate,
+  selectedEndDate
+);
+
+render(filter);
+
+// =============== Filter Borough ===================
+// Menampilkan opsi borough
+const filterBorough = document.getElementById("borough-filter");
+filterBorough.addEventListener("change", (e) => {
+  selectedBoroughFilter = Number(e.target.value);
+  console.log(selectedBoroughFilter);
+
+  //   Render ulang chart sesuai filter
+  const filter = createFilter(
+    data,
+    Number(e.target.value),
+    selectedStartDate,
+    selectedEndDate
+  );
+
+  render(filter);
+});
+
+Object.keys(BOROUGH).forEach((key) => {
+  const option = document.createElement("option");
+  option.setAttribute("value", BOROUGH[key]);
+  option.textContent = BOROUGH_DISPLAY_NAME[BOROUGH[key]];
+  filterBorough.appendChild(option);
+});
+
+// ============ End of Filter ================
+
+// =========== Filter Date ==============
+
+const filterStartDate = document.getElementById("startDate");
+const filterEndDate = document.getElementById("endDate");
+
+filterStartDate.setAttribute("value", selectedStartDate);
+filterEndDate.setAttribute("value", selectedEndDate);
+
+filterStartDate.addEventListener("change", (e) => {
+  const startDate = e.target.value;
+  selectedStartDate = startDate;
+  filterEndDate.setAttribute("min", startDate);
+
+  const filter = createFilter(
+    data,
+    selectedBoroughFilter,
+    startDate,
+    selectedEndDate
+  );
+
+  render(filter);
+});
+
+filterEndDate.addEventListener("change", (e) => {
+  const endDate = e.target.value;
+  selectedEndDate = endDate;
+  filterStartDate.setAttribute("max", endDate);
+
+  const filter = createFilter(
+    data,
+    selectedBoroughFilter,
+    selectedStartDate,
+    endDate
+  );
+
+  render(filter);
+});
+
+// =========== End of Filter Date ============
+
+function sum(data, key) {
+  return data.reduce((total, item) => {
+    let salePrice = item[key];
+
+    if (typeof salePrice === "string") {
+      salePrice = Number(item[key].split(".").join(""));
     }
 
-    return acc;
-  }, {});
+    return total + salePrice;
+  }, 0);
 }
 
-function createFilter(data, startDate, endDate) {
-  // Cara untuk mendapatkan unique borough list
-  const uniqueBorough = Array.from(new Set(data.map((item) => item.BOROUGH)));
+function createFilter(data, selectedBorough = -1, startDate, endDate) {
+  const startDateObj = new Date(startDate);
+  const endDateObj = new Date(endDate);
+  // Step 1: Buat list label (Bulan & Tahun)
+  /**
+   * labels: ["Jan 2016", "Feb 2016", "Mar 2016", "Apr 2016"]
+   */
 
-  const filteredData = normalizeData(data, startDate, endDate);
+  const x = d3.scaleUtc().domain([startDateObj, endDateObj]);
+  const labels = x.ticks(d3.utcMonth.every(1));
 
-  function getMonthlySales() {
-    const scale = d3
-      .scaleUtc()
-      .domain([startDate, endDate])
-      .ticks(d3.utcMonth.every(1));
+  // Step 2: Bikin dataset per borough
+  /**
+ * {
+        label: "Manhattan",
+        data: [
+          3_700_000_000, 2_800_000_000, 3_700_000_000, 3_700_000_000,
+          3_700_000_000, 3_700_000_000,
+        ],
+        borderWidth: 1,
+      }
+ */
 
-    const formattedScale = scale.map((date) => {
-      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    });
+  const mappedData = data
+    .map((item) => {
+      const [date, month, year] = item["SALE DATE"].split("/").map(Number);
+      return {
+        ...item,
+        date: new Date(year, month - 1, date),
+        dateValue: {
+          date: date,
+          month: month - 1,
+          year: year,
+        },
+      };
+    })
+    .filter((item) => {
+      return startDateObj <= item.date && item.date <= endDateObj;
+    })
+    .filter(
+      (item) => selectedBorough === -1 || item.BOROUGH == selectedBorough
+    );
+  console.log(mappedData, selectedBorough);
 
-    const monthlySales = uniqueBorough.map((borough) => {
-      const sales = scale.map((date) => {
+  function getTotalMonthlySales() {
+    const datasets = Object.keys(BOROUGH).map((key) => {
+      const data = labels.map((date) => {
         const month = date.getMonth();
         const year = date.getFullYear();
 
-        const isOnMonthRange = (data) =>
-          data.dateValue.month === month && data.dateValue.year === year;
+        const filteredData = mappedData.filter((item) => {
+          return (
+            item.dateValue.month === month &&
+            item.dateValue.year === year &&
+            item.BOROUGH === BOROUGH[key]
+          );
+        });
 
-        const data = filteredData[borough].filter((data) =>
-          isOnMonthRange(data)
-        );
+        const totalSales = sum(filteredData, "SALE PRICE");
 
-        const salesTotal = sum(data, "SALE PRICE");
-
-        return salesTotal;
+        return totalSales;
       });
 
       return {
-        borough,
-        sales,
+        label: BOROUGH_DISPLAY_NAME[BOROUGH[key]],
+        data: data,
       };
     });
 
-    return { data: monthlySales, scales: formattedScale };
+    return {
+      labels: labels.map(
+        (date) => `${monthNames[date.getMonth()]} ${date.getFullYear()}`
+      ),
+      datasets: datasets.filter(
+        (item) =>
+          selectedBorough === -1 ||
+          item.label === BOROUGH_DISPLAY_NAME[selectedBorough]
+      ),
+    };
+  }
+
+  function getTotalSales() {
+    return formatter.format(sum(mappedData, "SALE PRICE"));
+  }
+
+  //   TODO: tambahin function lain
+
+  //mendapatkan total unit
+  function getTotalUnits() {
+    return sum(mappedData, "TOTAL UNITS")
+      .toFixed(0)
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  //mendapatkan harga rata-rata
+  function getAverageSales() {
+    let totalSales = sum(mappedData, "SALE PRICE");
+    let average = totalSales / mappedData.length;
+    return average;
+  }
+
+  function getTopCategories() {
+    const categorySales = {};
+    mappedData.forEach((item) => {
+      const category = item["BUILDING CLASS CATEGORY"];
+      const salePrice = parseFloat(item["SALE PRICE"]);
+      if (!isNaN(salePrice)) {
+        if (category in categorySales) {
+          categorySales[category] += salePrice;
+        } else {
+          categorySales[category] = salePrice;
+        }
+      }
+    });
+
+    const sortedCategories = Object.keys(categorySales).sort(
+      (a, b) => categorySales[b] - categorySales[a]
+    );
+
+    const topCategories = sortedCategories.slice(0, 5);
+
+    const topCategoriesList = topCategories.map((category) => {
+      return {
+        category: category,
+        totalSales: categorySales[category], // Pastikan nilai numerik untuk data
+      };
+    });
+
+    return topCategoriesList;
+  }
+
+  function getBottomCategories() {
+    const categorySales = {};
+    mappedData.forEach((item) => {
+      const category = item["BUILDING CLASS CATEGORY"];
+      const salePrice = parseFloat(item["SALE PRICE"]);
+      if (!isNaN(salePrice)) {
+        if (category in categorySales) {
+          categorySales[category] += salePrice;
+        } else {
+          categorySales[category] = salePrice;
+        }
+      }
+    });
+
+    const sortedCategories = Object.keys(categorySales).sort(
+      (a, b) => categorySales[a] - categorySales[b]
+    );
+
+    const bottomCategories = sortedCategories.slice(0, 5);
+
+    const bottomCategoriesList = bottomCategories.map((category) => {
+      return {
+        category: category,
+        totalSales: categorySales[category],
+      };
+    });
+
+    return bottomCategoriesList;
+  }
+  function getTopCategoriesByUnits() {
+    const categoryUnits = {};
+    mappedData.forEach((item) => {
+      const category = item["BUILDING CLASS CATEGORY"];
+      const totalUnits = parseFloat(item["TOTAL UNITS"]);
+      if (!isNaN(totalUnits)) {
+        if (category in categoryUnits) {
+          categoryUnits[category] += totalUnits;
+        } else {
+          categoryUnits[category] = totalUnits;
+        }
+      }
+    });
+
+    const sortedCategories = Object.keys(categoryUnits).sort(
+      (a, b) => categoryUnits[b] - categoryUnits[a]
+    );
+
+    const topCategories = sortedCategories.slice(0, 5);
+
+    const topCategoriesList = topCategories.map((category) => {
+      return {
+        category: category,
+        totalUnits: categoryUnits[category],
+      };
+    });
+
+    return topCategoriesList;
   }
 
   return {
-    getMonthlySales,
-    data: filteredData,
+    getTotalMonthlySales,
+    getTotalSales,
+    getTotalUnits,
+    getAverageSales,
+    getTopCategories,
+    getBottomCategories,
+    getTopCategoriesByUnits,
   };
 }
 
-(async function main() {
-  const chart = await fetchData();
-  const startDate = new Date("2016-09-01");
-  const endDate = new Date("2017-05-31");
-  const filter = createFilter(chart, startDate, endDate);
+function renderTotalSales(sales) {
+  const totalSales = document.getElementById("totalSales");
+  totalSales.textContent = sales;
+}
 
-  console.log({ chart });
+function renderCharts(labels, datasets) {
+  const ctx = document.getElementById("totalMontlySales");
 
-  console.log(filter.getMonthlySales());
-
-  createMontlySaleChart(filter);
-})();
-
-function createMontlySaleChart(filter) {
-  const color = [
-    "hsl(24.6 95% 53.1%)",
-    "hsla(180, 40%, 65%, 1)",
-    "#63C7B2",
-    "#3F612D",
-    "#18206F",
-  ];
-
-  const totalMonthlySalesCtx = document.getElementById("totalMontlySales");
-  const scale = filter.getMonthlySales().scales;
-  const datasets = filter.getMonthlySales().data.map((item, i) => ({
-    label: item.borough,
-    data: item.sales,
-    fill: false,
-    borderColor: color[i % color.length],
-    backgroundColor: color[i % color.length],
-    tension: 0.3,
-  }));
-
-  new Chart(totalMonthlySalesCtx, {
+  return new Chart(ctx, {
     type: "line",
     data: {
-      labels: scale,
+      labels: labels,
       datasets: datasets,
     },
     options: {
-      aspectRatio: 10 / 4,
       interaction: {
         mode: "index",
       },
@@ -151,4 +364,208 @@ function createMontlySaleChart(filter) {
       },
     },
   });
+}
+function renderTopCategoriesHorizontalBarChart(topCategories) {
+  const labels = topCategories.map((item) => item.category);
+  const data = topCategories.map((item) => item.totalSales);
+
+  const ctx = document
+    .getElementById("topCategoriesHorizontalBarChart")
+    .getContext("2d");
+
+  return new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Total Sales",
+          data: data,
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.2)",
+            "rgba(255, 159, 64, 0.2)",
+            "rgba(255, 205, 86, 0.2)",
+            "rgba(75, 192, 192, 0.2)",
+            "rgba(54, 162, 235, 0.2)",
+          ],
+          borderColor: [
+            "rgb(255, 99, 132)",
+            "rgb(255, 159, 64)",
+            "rgb(255, 205, 86)",
+            "rgb(75, 192, 192)",
+            "rgb(54, 162, 235)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y", // Mengatur sumbu menjadi horizontal
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "$" + value.toLocaleString();
+            },
+          },
+        },
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: "Top 5 Categories by Sales",
+        },
+      },
+    },
+  });
+}
+function renderBottomCategoriesHorizontalBarChart(bottomCategories) {
+  const labels = bottomCategories.map((item) => item.category);
+  const data = bottomCategories.map((item) => item.totalSales);
+
+  const ctx = document
+    .getElementById("bottomCategoriesHorizontalBarChart")
+    .getContext("2d");
+
+  return new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Total Sales",
+          data: data,
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.2)",
+            "rgba(255, 159, 64, 0.2)",
+            "rgba(255, 205, 86, 0.2)",
+            "rgba(75, 192, 192, 0.2)",
+            "rgba(54, 162, 235, 0.2)",
+          ],
+          borderColor: [
+            "rgb(255, 99, 132)",
+            "rgb(255, 159, 64)",
+            "rgb(255, 205, 86)",
+            "rgb(75, 192, 192)",
+            "rgb(54, 162, 235)",
+          ],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "$" + value.toLocaleString();
+            },
+          },
+        },
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: "Bottom 5 Categories by Sales",
+        },
+      },
+    },
+  });
+}
+function renderTopCategoriesDoughnutChartByUnits(topCategories) {
+  const labels = topCategories.map((item) => item.category);
+  const data = topCategories.map((item) => item.totalUnits);
+
+  const ctx = document
+    .getElementById("topCategoriesDoughnutChart")
+    .getContext("2d");
+
+  return new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Total Units",
+          data: data,
+          backgroundColor: [
+            "rgb(255, 99, 132)",
+            "rgb(54, 162, 235)",
+            "rgb(255, 205, 86)",
+            "rgb(75, 192, 192)",
+            "rgb(153, 102, 255)",
+          ],
+          hoverOffset: 4,
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+        },
+      },
+    },
+  });
+}
+
+function renderTotalUnits(units) {
+  const totalUnits = document.getElementById("totalUnits");
+  totalUnits.textContent = units;
+}
+
+function renderAverageSales(average) {
+  const averageSales = document.getElementById("averageSales");
+  averageSales.textContent = formatter.format(average);
+}
+
+function renderTopCategories(topCategories) {
+  const topCategoriesListElement = document.getElementById("topCategoriesList");
+  topCategoriesListElement.innerHTML = "";
+
+  topCategories.forEach((item, index) => {
+    const listItem = document.createElement("div");
+    listItem.textContent = `${index + 1}. ${item.category}: ${item.totalSales}`;
+    topCategoriesListElement.appendChild(listItem);
+  });
+}
+
+function render(filter) {
+  if (totalMonthlySaleChart !== null) {
+    totalMonthlySaleChart.destroy();
+  }
+
+  if (topCategoriesChart !== null) {
+    topCategoriesChart.destroy();
+  }
+  if (bottomCategoriesChart !== null) {
+    bottomCategoriesChart.destroy();
+  }
+  if (HighestCategoriesChart !== null) {
+    HighestCategoriesChart.destroy();
+  }
+  if (totalUnitCategoriesChart !== null) {
+    totalUnitCategoriesChart.destroy();
+  }
+
+  renderTotalSales(filter.getTotalSales());
+  renderTotalUnits(filter.getTotalUnits());
+  renderAverageSales(filter.getAverageSales());
+
+  const { datasets, labels } = filter.getTotalMonthlySales();
+  totalMonthlySaleChart = renderCharts(labels, datasets);
+
+  const topCategories = filter.getTopCategories();
+  topCategoriesChart = renderTopCategoriesHorizontalBarChart(topCategories);
+
+  const bottomCategories = filter.getBottomCategories();
+  bottomCategoriesChart =
+    renderBottomCategoriesHorizontalBarChart(bottomCategories);
+
+  const topCategoriesByUnits = filter.getTopCategoriesByUnits();
+  totalUnitCategoriesChart =
+    renderTopCategoriesDoughnutChartByUnits(topCategoriesByUnits);
 }
