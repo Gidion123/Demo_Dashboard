@@ -17657,6 +17657,7 @@ const geojsonData = {
   ],
 };
 
+//TODO: Tentuin Warna Utama dan Turunannnya
 function getColor(d) {
   return d > 396_865_891
     ? "#fb9a99" // Pink
