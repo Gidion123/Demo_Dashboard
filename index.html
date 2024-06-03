@@ -3,6 +3,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NYC Property Sales Examples</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,6 +15,10 @@
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
+    />
+    <link
+      href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.0.8/r-3.0.2/datatables.min.css"
+      rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -89,10 +94,27 @@
           <canvas id="topCategoriesDoughnutChart"></canvas>
         </div>
       </div>
-      <div class="sales-chart">
-        <h2>Tabel</h2>
-        <canvas id="map"></canvas>
-      </div>
+      <section>
+        <h1>Table</h1>
+        <div>
+          <table id="salesTable">
+            <thead>
+              <tr>
+                <th>BOROUGH</th>
+                <th>NEIGHBORHOOD</th>
+                <th>BUILDING CLASS CATEGORY</th>
+                <th>TAX CLASS AT PRESENT</th>
+                <th>TOTAL UNITS</th>
+                <th>LAND SQUARE FEET</th>
+                <th>GROSS SQUARE FEET</th>
+                <th>YEAR BUILT</th>
+                <th>SALE PRICE</th>
+                <th>SALE DATE</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </section>
     </main>
     <footer>
       <address>
@@ -113,5 +135,8 @@
     <script src="geoJsonData.js"></script>
     <script src="MapNyc.js"></script>
     <script src="script.js" type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.0.8/r-3.0.2/datatables.min.js"></script>
+    <script src="table.js"></script>
   </body>
 </html>

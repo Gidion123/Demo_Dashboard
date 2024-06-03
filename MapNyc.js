@@ -5,6 +5,8 @@ async function fetchData() {
   return data;
 }
 
+let geojson;
+let info = L.control();
 async function main() {
   const data = await fetchData();
   const zipCodeSalePrice = data.reduce((acc, curr) => {
@@ -38,8 +40,6 @@ async function main() {
     }),
   };
 
-  var info = L.control();
-
   info.onAdd = function (map) {
     this._div = L.DomUtil.create("div", "info"); // create a div with a class "info"
     this.update();
@@ -71,8 +71,6 @@ async function main() {
     attribution:
       '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
-
-  var geojson;
 
   geojson = L.geoJson(mappedGeoJsonData, { style, onEachFeature }).addTo(map);
 
