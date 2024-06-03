@@ -60,8 +60,6 @@ async function main() {
         : "Hover over a state");
   };
 
-  console.log({ mappedGeoJsonData });
-
   var map = L.map("map").setView([40.7447677, -73.8947312], 10);
 
   info.addTo(map);
@@ -73,40 +71,38 @@ async function main() {
   }).addTo(map);
 
   geojson = L.geoJson(mappedGeoJsonData, { style, onEachFeature }).addTo(map);
-
-  console.log({ data, zipCodeSalePrice });
 }
 
 main();
 
-//TODO: Tentuin Warna Utama dan Turunannnya // clear
 function getColor(d) {
-  return d > 396_865_891
-    ? "#fb9a99" // Pink
-    : d > 352_769_681
-    ? "#33a02c" // Hijau tua
-    : d > 308_673_471
-    ? "#1f78b4" // Biru tua
-    : d > 264_577_261
-    ? "#e41a1c" // Merah
-    : d > 220_481_051
-    ? "#377eb8" // Biru
-    : d > 176_384_841
-    ? "#4daf4a" // Hijau
-    : d > 132_288_631
-    ? "#984ea3" // Ungu
-    : d > 110_240_526
-    ? "#ff7f00" // Oranye
-    : d > 88_192_421
-    ? "#ffff33" // Kuning
-    : d > 66_144_316
-    ? "#a65628" // Coklat
-    : d > 44_096_211
-    ? "#f781bf" // Pink muda
-    : d > 22_048_106
-    ? "#999999" // Abu-abu tua
-    : // <= 22_048_105
-      "#e0e0e0"; // Abu-abu muda
+  return d > 396865891
+    ? "#06285C"
+    : d > 352769681
+    ? "#1A3C70"
+    : d > 308673471
+    ? "#2D5084"
+    : d > 264577261
+    ? "#406498"
+    : d > 220481051
+    ? "#5478AC"
+    : d > 176384841
+    ? "#688CC0"
+    : d > 132288631
+    ? "#7CA0D4"
+    : d > 110240526
+    ? "#8FB4E8"
+    : d > 88192421
+    ? "#A3C8FC"
+    : d > 66144316
+    ? "#B7DCFF"
+    : d > 44096211
+    ? "#CBF0FF"
+    : d > 22048106
+    ? "#DFF4FF"
+    : d > 22048105
+    ? "#F3FFFF"
+    : "#FFFFFF"; // lightest
 }
 
 function style(feature) {

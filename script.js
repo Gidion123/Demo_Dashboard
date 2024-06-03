@@ -1,7 +1,5 @@
 // Step 0: Import data
-import data from "./json/DatasetNycPropertySales.json" assert { type: "json" };
-
-console.log({ data });
+import data from "./json/DatasetNycPropertySales.json" with { type: "json" };
 
 const BOROUGH = {
   MANHATTAN: 1,
@@ -51,6 +49,7 @@ let selectedStartDate = "2016-09-01";
 let selectedEndDate = "2017-08-31";
 function createSalesTable(data) {
   return new DataTable("#salesTable", {
+    destroy: true,
     data: data,
     columns: [
       { data: "NAME BOROUGH" },
@@ -81,8 +80,6 @@ function createSalesTable(data) {
 }
 
 function main() {
-  console.log({ data });
-
   // Buat tabel dengan data yang diimpor
   createSalesTable(data);
 
@@ -100,7 +97,6 @@ function main() {
   const filterBorough = document.getElementById("borough-filter");
   filterBorough.addEventListener("change", (e) => {
     selectedBoroughFilter = Number(e.target.value);
-    console.log(selectedBoroughFilter);
 
     // Render ulang chart sesuai filter
     const filter = createFilter(
@@ -216,7 +212,6 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
     .filter(
       (item) => selectedBorough === -1 || item.BOROUGH == selectedBorough
     );
-  console.log(mappedData, selectedBorough);
 
   function getTotalMonthlySales() {
     const datasets = Object.keys(BOROUGH).map((key) => {
