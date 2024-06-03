@@ -45,84 +45,120 @@ let topCategoriesChart = null;
 let bottomCategoriesChart = null;
 let HighestCategoriesChart = null;
 let totalUnitCategoriesChart = null;
+let tableDataset = null;
 let selectedBoroughFilter = -1;
 let selectedStartDate = "2016-09-01";
 let selectedEndDate = "2017-08-31";
+function createSalesTable(data) {
+  return new DataTable("#salesTable", {
+    data: data,
+    columns: [
+      { data: "NAME BOROUGH" },
+      { data: "NEIGHBORHOOD" },
+      { data: "BUILDING CLASS CATEGORY" },
+      { data: "TAX CLASS AT PRESENT" },
+      { data: "TOTAL UNITS" },
+      { data: "LAND SQUARE FEET" },
+      { data: "GROSS SQUARE FEET" },
+      { data: "YEAR BUILT" },
+      //Sale Price
+      {
+        data: "SALE PRICE",
+        render: (data, type) => {
+          const number = DataTable.render
+            .number(",", ".", 3, "$")
+            .display(data);
 
-// Render chart di awal
-const filter = createFilter(
-  data,
-  selectedBoroughFilter,
-  selectedStartDate,
-  selectedEndDate
-);
+          if (type === "display") {
+            return number;
+          }
+          return data;
+        },
+      },
+      { data: "SALE DATE" },
+    ],
+  });
+}
 
-render(filter);
+function main() {
+  console.log({ data });
 
-// =============== Filter Borough ===================
-// Menampilkan opsi borough
-const filterBorough = document.getElementById("borough-filter");
-filterBorough.addEventListener("change", (e) => {
-  selectedBoroughFilter = Number(e.target.value);
-  console.log(selectedBoroughFilter);
+  // Buat tabel dengan data yang diimpor
+  createSalesTable(data);
 
-  //   Render ulang chart sesuai filter
+  // Lanjutkan dengan filter dan render
   const filter = createFilter(
     data,
-    Number(e.target.value),
+    selectedBoroughFilter,
     selectedStartDate,
     selectedEndDate
   );
 
   render(filter);
-});
 
-Object.keys(BOROUGH).forEach((key) => {
-  const option = document.createElement("option");
-  option.setAttribute("value", BOROUGH[key]);
-  option.textContent = BOROUGH_DISPLAY_NAME[BOROUGH[key]];
-  filterBorough.appendChild(option);
-});
+  // Filter Borough
+  const filterBorough = document.getElementById("borough-filter");
+  filterBorough.addEventListener("change", (e) => {
+    selectedBoroughFilter = Number(e.target.value);
+    console.log(selectedBoroughFilter);
 
-// ============ End of Filter ================
+    // Render ulang chart sesuai filter
+    const filter = createFilter(
+      data,
+      Number(e.target.value),
+      selectedStartDate,
+      selectedEndDate
+    );
 
-// =========== Filter Date ==============
+    render(filter);
+  });
 
-const filterStartDate = document.getElementById("startDate");
-const filterEndDate = document.getElementById("endDate");
+  Object.keys(BOROUGH).forEach((key) => {
+    const option = document.createElement("option");
+    option.setAttribute("value", BOROUGH[key]);
+    option.textContent = BOROUGH_DISPLAY_NAME[BOROUGH[key]];
+    filterBorough.appendChild(option);
+  });
 
-filterStartDate.setAttribute("value", selectedStartDate);
-filterEndDate.setAttribute("value", selectedEndDate);
+  // Filter Date
+  const filterStartDate = document.getElementById("startDate");
+  const filterEndDate = document.getElementById("endDate");
 
-filterStartDate.addEventListener("change", (e) => {
-  const startDate = e.target.value;
-  selectedStartDate = startDate;
-  filterEndDate.setAttribute("min", startDate);
+  filterStartDate.setAttribute("value", selectedStartDate);
+  filterEndDate.setAttribute("value", selectedEndDate);
 
-  const filter = createFilter(
-    data,
-    selectedBoroughFilter,
-    startDate,
-    selectedEndDate
-  );
+  filterStartDate.addEventListener("change", (e) => {
+    const startDate = e.target.value;
+    selectedStartDate = startDate;
+    filterEndDate.setAttribute("min", startDate);
 
-  render(filter);
-});
+    const filter = createFilter(
+      data,
+      selectedBoroughFilter,
+      startDate,
+      selectedEndDate
+    );
 
-filterEndDate.addEventListener("change", (e) => {
-  const endDate = e.target.value;
-  selectedEndDate = endDate;
-  filterStartDate.setAttribute("max", endDate);
+    render(filter);
+  });
 
-  const filter = createFilter(
-    data,
-    selectedBoroughFilter,
-    selectedStartDate,
-    endDate
-  );
+  filterEndDate.addEventListener("change", (e) => {
+    const endDate = e.target.value;
+    selectedEndDate = endDate;
+    filterStartDate.setAttribute("max", endDate);
 
-  render(filter);
-});
+    const filter = createFilter(
+      data,
+      selectedBoroughFilter,
+      selectedStartDate,
+      endDate
+    );
+
+    render(filter);
+  });
+}
+
+main();
 
 // =========== End of Filter Date ============
 
@@ -268,6 +304,9 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
 
     return topCategoriesList;
   }
+  function getFilteredData() {
+    return mappedData;
+  }
 
   function getBottomCategories() {
     const categorySales = {};
@@ -336,6 +375,7 @@ function createFilter(data, selectedBorough = -1, startDate, endDate) {
     getTopCategories,
     getBottomCategories,
     getTopCategoriesByUnits,
+    getFilteredData,
   };
 }
 
@@ -550,6 +590,9 @@ function render(filter) {
   if (totalUnitCategoriesChart !== null) {
     totalUnitCategoriesChart.destroy();
   }
+  if (tableDataset !== null) {
+    tableDataset.destroy();
+  }
 
   renderTotalSales(filter.getTotalSales());
   renderTotalUnits(filter.getTotalUnits());
@@ -568,4 +611,7 @@ function render(filter) {
   const topCategoriesByUnits = filter.getTopCategoriesByUnits();
   totalUnitCategoriesChart =
     renderTopCategoriesDoughnutChartByUnits(topCategoriesByUnits);
+
+  const dataTable = filter.getFilteredData();
+  tableDataset = createSalesTable(dataTable);
 }
